@@ -34,10 +34,19 @@ class LightCurve(object):
         data = self.data
         label = os.path.basename(self.filename)
         if not data['Phase(T_Bmax)'].empty:
-            plt.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt='o', label=label)
+            plt.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt='o', label=label.split('_')[0], zorder=1)
+
 
         # plt.figure()
         # plt.errorbar(data['Phase(T_Bmax)'], data['App mag'], yerr=data['Error App mag'], fmt='o')
+
+    def bin_light_curve(self):
+        phase = self.data['Phase(T_Bmax)'].values
+        absMag = self.data['Abs mag'].values
+        xBins = np.linspace(-20, 100, 61)
+        yBinned = np.interp(x=xBins, xp=phase, fp=absMag, left=np.NaN, right=np.NaN)
+
+        return xBins, yBinned
 
 
 def get_filenames(band):
@@ -51,18 +60,32 @@ def get_filenames(band):
 def main():
     bandList = ['H_band', 'J_Band', 'K_band', 'Y_Band']
     for band in bandList:
+        xBinsList, yBinnedList = [], []
         plt.figure()
         plt.title(band)
         filenameList = get_filenames(band)
         for filename in filenameList:
             lightCurve = LightCurve(filename)
             lightCurve.plot_light_curves()
+            try:
+                xBins, yBinned = lightCurve.bin_light_curve()
+                xBinsList.append(xBins)
+                yBinnedList.append(yBinned)
+            except TypeError:
+                pass
         plt.xlabel('Phase')
         plt.ylabel('Abs mag')
+        plt.xlim(-20, 100)
         plt.gca().invert_yaxis()
+        xBinsArray, yBinnedArray = np.array(xBinsList), np.array(yBinnedList)
+        averageLC = np.nanmean(yBinnedArray, axis=0)
+        errorsLC = np.nanstd(yBinnedArray, axis=0)
+        plt.plot(xBinsArray[0], averageLC, 'k-', zorder=10)
+        plt.fill_between(xBinsArray[0], averageLC-errorsLC, averageLC+errorsLC, alpha=0.7, zorder=10)
 
-        plt.legend()
+        # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., ncol=1)
     plt.show()
+
 
 if __name__ == '__main__':
     main()
