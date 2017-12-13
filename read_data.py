@@ -31,11 +31,11 @@ class LightCurve(object):
 
         return fileVars, data
 
-    def plot_light_curves(self, axis, cm):
+    def plot_light_curves(self, axis, cm, zorder):
         data = self.data
         label = os.path.basename(self.filename)
         if not data['Phase(T_Bmax)'].empty:
-            axis.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt=cm[1], label=label.split('_')[0], zorder=1, color=cm[0])
+            axis.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt=cm[1], label=label.split('_')[0], zorder=zorder, color=cm[0], alpha=0.8)
 
 
         # plt.figure()
@@ -49,7 +49,7 @@ class LightCurve(object):
 
         return xBins, yBinned
 
-    def get_peaks(self, axis=None, cm=None):
+    def get_peaks(self, axis=None, cm=None, zorder=None):
         xBins, yBins = self.bin_light_curve()
         t=0
 
@@ -74,7 +74,7 @@ class LightCurve(object):
         peakFluxes = np.delete(peakFluxes, deleteIndexes)
 
         if axis is not None:
-            axis.plot(peakPhases, peakFluxes, 'o', color=cm[0], marker=cm[1])
+            axis.plot(peakPhases, peakFluxes, 'o', color=cm[0], marker=cm[1], zorder=zorder)
 
         return peakPhases, peakFluxes
 
@@ -89,7 +89,7 @@ def get_filenames(band):
 
 def main():
     bandList = ['H_band', 'J_Band', 'K_band', 'Y_Band']
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
+    colors = ['#ff7f0e', '#2ca02c', '#d62728', '#1f77b4', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
               '#17becf', 'k', '#911eb4', '#800000', '#aa6e28']
     markers = ['o', 'v', 'P', '*', 'D', 'X', 'p', '3', 's', 'x', 'p']
     colorMarker = []
@@ -105,24 +105,26 @@ def main():
         ax[0].invert_yaxis()
         ax[1].invert_yaxis()
         ax[1].set_ylabel('Maxima')
+        zorder = 200
 
         filenameList = get_filenames(band)
         for i, filename in enumerate(filenameList):
+            zorder -= 1
             lightCurve = LightCurve(filename)
-            lightCurve.plot_light_curves(axis=ax[0], cm=colorMarker[i])
+            lightCurve.plot_light_curves(axis=ax[0], cm=colorMarker[i], zorder=zorder)
             try:
                 xBins, yBins = lightCurve.bin_light_curve()
                 xBinsList.append(xBins)
                 yBinsList.append(yBins)
-                peakPhases, peakFluxes = lightCurve.get_peaks(axis=ax[1], cm=colorMarker[i])
+                peakPhases, peakFluxes = lightCurve.get_peaks(axis=ax[1], cm=colorMarker[i], zorder=zorder)
             except TypeError:
                 pass
         xBinsArray, yBinsArray = np.array(xBinsList), np.array(yBinsList)
         averageLC = np.nanmean(yBinsArray, axis=0)
         errorsLC = np.nanstd(yBinsArray, axis=0)
 
-        ax[0].plot(xBinsArray[0], averageLC, 'k-', zorder=10)
-        ax[0].fill_between(xBinsArray[0], averageLC-errorsLC, averageLC+errorsLC, alpha=0.7, zorder=10)
+        ax[0].plot(xBinsArray[0], averageLC, 'k-', zorder=1000)
+        ax[0].fill_between(xBinsArray[0], averageLC-errorsLC, averageLC+errorsLC, alpha=0.7, zorder=1000)
 
 
         plt.xlabel('Phase (days)')
