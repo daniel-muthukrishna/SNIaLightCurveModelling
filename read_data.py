@@ -37,7 +37,6 @@ class LightCurve(object):
         if not data['Phase(T_Bmax)'].empty:
             axis.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt=cm[1], label=label.split('_')[0], zorder=zorder, color=cm[0], alpha=0.8)
 
-
         # plt.figure()
         # plt.errorbar(data['Phase(T_Bmax)'], data['App mag'], yerr=data['Error App mag'], fmt='o')
 
@@ -51,7 +50,6 @@ class LightCurve(object):
 
     def get_peaks(self, axis=None, cm=None, zorder=None):
         xBins, yBins = self.bin_light_curve()
-        t=0
 
         peakIndexes = argrelextrema(yBins, np.less)
         peakPhases = xBins[peakIndexes]
@@ -117,11 +115,10 @@ class PopulationStatistics(object):
         ax[0].plot(xBinsArray[0], averageLC, 'k-', zorder=1000)
         ax[0].fill_between(xBinsArray[0], averageLC-errorsLC, averageLC+errorsLC, alpha=0.7, zorder=1000)
 
-
         plt.xlabel('Phase (days)')
         plt.xlim(-20, 100)
         # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., ncol=1)
-        plt.savefig(self.bandName)
+        plt.savefig('Figures/' + self.bandName)
 
         return xBinsArray, yBinsArray, np.array(peaks), headerData
 
@@ -166,7 +163,7 @@ class PopulationStatistics(object):
         ax[1, 1].set_ylabel('mu_Snoopy')
 
         fig.suptitle(self.bandName)
-        plt.savefig("%s_mu_vs_peaks" % self.bandName)
+        plt.savefig("Figures/%s_mu_vs_peaks" % self.bandName)
 
 
 def get_filenames(band):
@@ -189,6 +186,8 @@ def get_colors_and_markers():
 
 
 def main():
+    if not os.path.exists('Figures'):
+        os.makedirs('Figures')
     bandList = ['H_band', 'J_Band', 'K_band', 'Y_Band']
     colorMarker = get_colors_and_markers()
 
