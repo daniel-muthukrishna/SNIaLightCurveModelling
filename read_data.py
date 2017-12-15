@@ -19,7 +19,7 @@ class LightCurve(object):
         for line in lines[:10]:
             if line[0] != '#':
                 valuesStr, keysStr = line.split(' # ')
-                keys = keysStr.replace('(', '', 1).rsplit(')', 1)[0].split(',')
+                keys = keysStr.replace('(', '', 1).rsplit(')', 1)[0].split(', ')
                 values = valuesStr.split()
                 for i in range(len(keys)):
                     fileVars[keys[i]] = values[i]
@@ -85,7 +85,7 @@ class PopulationStatistics(object):
         self.bandName = bandName
 
     def plot_binned_light_curves(self, colorMarker):
-        xBinsList, yBinsList, peaks = [], [], []
+        xBinsList, yBinsList, peaks, headerData = [], [], [], []
         zorder = 200
 
         fig, ax = plt.subplots(2, sharex=True)
@@ -101,10 +101,12 @@ class PopulationStatistics(object):
             lightCurve.plot_light_curves(axis=ax[0], cm=colorMarker[i], zorder=zorder)
             try:
                 xBins, yBins = lightCurve.bin_light_curve()
+                peakPhases, peakFluxes = lightCurve.get_peaks(axis=ax[1], cm=colorMarker[i], zorder=zorder)
+                header = lightCurve.snVars
                 xBinsList.append(xBins)
                 yBinsList.append(yBins)
-                peakPhases, peakFluxes = lightCurve.get_peaks(axis=ax[1], cm=colorMarker[i], zorder=zorder)
                 peaks.append([peakPhases, peakFluxes])
+                headerData.append(header)
             except TypeError:
                 pass
 
@@ -121,7 +123,50 @@ class PopulationStatistics(object):
         # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., ncol=1)
         plt.savefig(self.bandName)
 
-        return xBinsArray, yBinsArray, np.array(peaks)
+        return xBinsArray, yBinsArray, np.array(peaks), headerData
+
+    def get_mu(self, headerData):
+        muList = []
+        for header in headerData:
+            muSnoopy = float(header['mu_Snoopy'])
+            muSnoopyErr = float(header['err_mu_Snoopy'])
+            muLCDM = float(header['mu_LCDM'])
+            muList.append([muSnoopy, muSnoopyErr, muLCDM])
+
+        return np.array(muList)
+
+    def plot_mu_vs_peaks(self, muList, peaks):
+        count = 0
+        fig, ax = plt.subplots(2, 2, sharex='col', sharey='row')
+        for (muSnoopy, muSnoopyErr, muLCDM), (peakPhases, peakFluxes) in zip(muList, peaks):
+            if peakPhases.any():
+                for peakPhase, peakFlux in zip(peakPhases, peakFluxes):
+                    if 15 < peakPhase < 40:  # Second peak
+                        ax[0, 0].errorbar(peakPhase, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[0, 1].errorbar(peakFlux, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
+                        count+=1
+                    if -15 < peakPhase < 8:  # First peak
+                        ax[1, 0].errorbar(peakPhase, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[1, 1].errorbar(peakFlux, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
+
+        ax[0, 0].set_title('Second Peak')
+        ax[0, 0].set_xlabel('Phase (days)')
+        ax[0, 0].set_ylabel('mu_Snoopy')
+
+        ax[1, 0].set_title('Second Peak')
+        ax[1, 0].set_xlabel('Phase (days)')
+        ax[1, 0].set_ylabel('mu_Snoopy')
+
+        ax[0, 1].set_title('First Peak')
+        ax[0, 1].set_xlabel('Peak Flux')
+        ax[0, 1].set_ylabel('mu_Snoopy')
+
+        ax[1, 1].set_title('First Peak')
+        ax[1, 1].set_xlabel('Peak Flux')
+        ax[1, 1].set_ylabel('mu_Snoopy')
+
+        fig.suptitle(self.bandName)
+        plt.savefig("%s_mu_vs_peaks" % self.bandName)
 
 
 def get_filenames(band):
@@ -150,7 +195,9 @@ def main():
     for band in bandList:
         filenameList = get_filenames(band)
         popStats = PopulationStatistics(filenameList, band)
-        xBinsArray, yBinsArray, peaks = popStats.plot_binned_light_curves(colorMarker)
+        xBinsArray, yBinsArray, peaks, headerData = popStats.plot_binned_light_curves(colorMarker)
+        muList = popStats.get_mu(headerData)
+        popStats.plot_mu_vs_peaks(muList, peaks)
 
     plt.show()
 
