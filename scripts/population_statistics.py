@@ -40,7 +40,7 @@ class PopulationStatistics(object):
         errorsLC = np.nanstd(yBinsArray, axis=0)
 
         ax[0].plot(xBinsArray[0], averageLC, 'k-', zorder=1000)
-        ax[0].fill_between(xBinsArray[0], averageLC-errorsLC, averageLC+errorsLC, alpha=0.7, zorder=1000)
+        ax[0].fill_between(xBinsArray[0], averageLC - errorsLC, averageLC + errorsLC, alpha=0.7, zorder=1000)
 
         plt.xlabel('Phase (days)')
         plt.xlim(-20, 100)
@@ -68,7 +68,7 @@ class PopulationStatistics(object):
                     if 15 < peakPhase < 40:  # Second peak
                         ax[0, 0].errorbar(peakPhase, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
                         ax[0, 1].errorbar(peakFlux, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
-                        count+=1
+                        count += 1
                     if -15 < peakPhase < 8:  # First peak
                         ax[1, 0].errorbar(peakPhase, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
                         ax[1, 1].errorbar(peakFlux, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)

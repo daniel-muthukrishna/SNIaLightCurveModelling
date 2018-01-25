@@ -2,7 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-from scripts.population_statistics import  PopulationStatistics
+from scripts.population_statistics import PopulationStatistics
 from scripts.helpers import get_filenames, get_colors_and_markers
 
 

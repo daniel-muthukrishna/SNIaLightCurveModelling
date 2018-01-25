@@ -2,7 +2,7 @@ import os
 
 
 def get_filenames(band):
-    directory = os.path.join('NIR_Lowz_data', band)
+    directory = os.path.join('data/NIR_Lowz_data', band)
     filenameList = os.listdir(directory)
     filePathList = [os.path.join(directory, f) for f in filenameList]
 

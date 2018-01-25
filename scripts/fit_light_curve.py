@@ -37,7 +37,8 @@ class LightCurve(object):
         header = lines[11].split('|')
         columnNames = [col.strip('#').strip() for col in header]
 
-        data = pd.read_csv(self.filename, header=None, delim_whitespace=True, skiprows=12, names=columnNames, comment='#')
+        data = pd.read_csv(self.filename, header=None, delim_whitespace=True, skiprows=12, names=columnNames,
+                           comment='#')
 
         return fileVars, data
 
@@ -46,10 +47,11 @@ class LightCurve(object):
         data = self.data
         label = os.path.basename(self.filename)
         if not data['Phase(T_Bmax)'].empty:
-            axis.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt=cm[1], label=label.split('_')[0], zorder=zorder, color=cm[0], alpha=0.8)
+            axis.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt=cm[1],
+                          label=label.split('_')[0], zorder=zorder, color=cm[0], alpha=0.8)
 
-        # plt.figure()
-        # plt.errorbar(data['Phase(T_Bmax)'], data['App mag'], yerr=data['Error App mag'], fmt='o')
+            # plt.figure()
+            # plt.errorbar(data['Phase(T_Bmax)'], data['App mag'], yerr=data['Error App mag'], fmt='o')
 
     def bin_light_curve(self):
         phase = self.data['Phase(T_Bmax)'].values
