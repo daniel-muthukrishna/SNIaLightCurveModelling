@@ -82,19 +82,36 @@ class PopulationStatistics(object):
         return muList
 
     def plot_mu_vs_peaks(self, muList, peaks):
-        count = 0
+        labelledMaxima = {}
+
         fig, ax = plt.subplots(2, 2, sharex='col', sharey='row')
         muPeaksCombined = pd.concat([muList, peaks], axis=1)
         for snName, row in muPeaksCombined.iterrows():
+            labelledMaxima[snName] = {}
             if row['peakPhases'].any():
+                count = {'first': 0, 'second': 0, 'other': 0}
                 for peakPhase, peakFlux in zip(row['peakPhases'], row['peakFluxes']):
-                    if 15 < peakPhase < 40:  # Second peak
-                        ax[0, 0].errorbar(peakPhase, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
-                        ax[0, 1].errorbar(peakFlux, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
-                        count += 1
                     if -15 < peakPhase < 8:  # First peak
                         ax[1, 0].errorbar(peakPhase, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
                         ax[1, 1].errorbar(peakFlux,row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
+                        labelledMaxima[snName]['firstMaxPhase'] = peakPhase
+                        labelledMaxima[snName]['firstMaxFlux'] = peakFlux
+                        count['first'] += 1
+                    elif 15 < peakPhase < 40:  # Second peak
+                        ax[0, 0].errorbar(peakPhase, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[0, 1].errorbar(peakFlux, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
+                        labelledMaxima[snName]['secondMaxPhase'] = peakPhase
+                        labelledMaxima[snName]['secondMaxFlux'] = peakFlux
+                        count['second'] += 1
+                    else:
+                        labelledMaxima[snName]['otherMaxPhase'] = peakPhase
+                        labelledMaxima[snName]['otherMaxFlux'] = peakFlux
+                        count['other'] += 1
+
+                if count['first'] > 1:
+                    print("More than one first maximum recorded for {0} in band {1}".format(snName, self.bandName))
+                if count['second'] > 1:
+                    print("More than one second maximum recorded for {0} in band {1}".format(snName, self.bandName))
 
         ax[0, 0].set_title('Second Peak')
         ax[0, 0].set_xlabel('Phase (days)')
@@ -114,3 +131,7 @@ class PopulationStatistics(object):
 
         fig.suptitle(self.bandName)
         plt.savefig("Figures/%s_mu_vs_peaks" % self.bandName)
+
+        labelledMaxima = pd.DataFrame.from_dict(labelledMaxima).transpose()
+
+        return labelledMaxima

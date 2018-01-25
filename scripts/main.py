@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from scripts.population_statistics import PopulationStatistics
 from scripts.helpers import get_filenames, get_colors_and_markers
+from scripts.optical_parameters import CompareOpticalAndNIR
 
 
 def main():
@@ -17,7 +18,10 @@ def main():
         popStats = PopulationStatistics(filenameList, band)
         xBinsArray, yBinsArray, peaks, headerData = popStats.plot_binned_light_curves(colorMarker)
         muList = popStats.get_mu(headerData)
-        popStats.plot_mu_vs_peaks(muList, peaks)
+        labelledMaxima = popStats.plot_mu_vs_peaks(muList, peaks)
+
+        opticalNIR = CompareOpticalAndNIR('data/Table_salt_snoopy_fittedParams.txt', labelledMaxima, band)
+        opticalNIR.nir_peaks_vs_optical_params()
 
     plt.show()
 
