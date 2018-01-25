@@ -1,6 +1,9 @@
 import os
+
 import matplotlib.pyplot as plt
-from population_statistics import PopulationStatistics, get_filenames, get_colors_and_markers
+
+from scripts.population_statistics import  PopulationStatistics
+from scripts.helpers import get_filenames, get_colors_and_markers
 
 
 def main():

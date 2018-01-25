@@ -10,6 +10,17 @@ class LightCurve(object):
         self.snVars, self.data = self.get_data()
 
     def get_data(self):
+        """
+        Retrieves the header variables and the light curve data from a supernova data file.
+        
+        Returns
+        -------
+        fileVars : dict
+            File variables from the header of the input self.filename
+        data : DataFrame
+            The data for each epoch with data from the input self.filename
+        
+        """
         with open(self.filename, 'r') as FileObj:
             lines = FileObj.readlines()
 
@@ -31,6 +42,7 @@ class LightCurve(object):
         return fileVars, data
 
     def plot_light_curves(self, axis, cm, zorder):
+        """ Plots the light curve with error bars and a different color for each"""
         data = self.data
         label = os.path.basename(self.filename)
         if not data['Phase(T_Bmax)'].empty:
@@ -48,6 +60,7 @@ class LightCurve(object):
         return xBins, yBinned
 
     def get_peaks(self, axis=None, cm=None, zorder=None):
+
         xBins, yBins = self.bin_light_curve()
 
         peakIndexes = argrelextrema(yBins, np.less)
