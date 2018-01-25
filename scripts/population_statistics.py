@@ -1,5 +1,7 @@
+import os
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from .fit_light_curve import LightCurve
 
@@ -10,7 +12,28 @@ class PopulationStatistics(object):
         self.bandName = bandName
 
     def plot_binned_light_curves(self, colorMarker):
-        xBinsList, yBinsList, peaks, headerData = [], [], [], []
+        """ Get the peaks and header data for each supernova. And plot the binned light curves.
+        
+        Parameters
+        ----------
+        colorMarker : tuple
+            First index is the color, the second index is the marker type. E.g. ('blue', '.')
+        
+        Returns
+        -------
+        xBinsArray : 1D numpy array
+            Binned values of the supernova age.
+        yBinsArray : 1D numpy array
+            Binned values of the supernova flux.
+        peaks : pandas DataFrame
+            Each row in the DataFrame contains information about each supernova, respectively. 
+            Each column is a 2 x 1 list of the phase and flux of a peak/maximum of the light curve.
+        headerData : pandas DataFrame
+            Each row in the DataFrame contains information about each supernova, respectively.
+            The columns contain the values from the header of each supernova data file (from self.filename). 
+        """
+
+        xBinsList, yBinsList, peaks, headerData = [], [], {}, {}
         zorder = 200
 
         fig, ax = plt.subplots(2, sharex=True)
@@ -21,6 +44,7 @@ class PopulationStatistics(object):
         ax[1].set_ylabel('Maxima')
 
         for i, filename in enumerate(self.filenameList):
+            snName = os.path.basename(filename).split('_')[0]
             zorder -= 1
             lightCurve = LightCurve(filename)
             lightCurve.plot_light_curves(axis=ax[0], cm=colorMarker[i], zorder=zorder)
@@ -30,10 +54,12 @@ class PopulationStatistics(object):
                 header = lightCurve.snVars
                 xBinsList.append(xBins)
                 yBinsList.append(yBins)
-                peaks.append([peakPhases, peakFluxes])
-                headerData.append(header)
+                peaks[snName] = {'peakPhases': peakPhases, 'peakFluxes': peakFluxes}
+                headerData[snName] = header
             except TypeError:
                 pass
+        peaks = pd.DataFrame.from_dict(peaks).transpose()
+        headerData = pd.DataFrame.from_dict(headerData).transpose()
 
         xBinsArray, yBinsArray = np.array(xBinsList), np.array(yBinsList)
         averageLC = np.nanmean(yBinsArray, axis=0)
@@ -47,31 +73,28 @@ class PopulationStatistics(object):
         # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., ncol=1)
         plt.savefig('Figures/' + self.bandName)
 
-        return xBinsArray, yBinsArray, np.array(peaks), headerData
+        return xBinsArray, yBinsArray, peaks, headerData
 
     def get_mu(self, headerData):
-        muList = []
-        for header in headerData:
-            muSnoopy = float(header['mu_Snoopy'])
-            muSnoopyErr = float(header['err_mu_Snoopy'])
-            muLCDM = float(header['mu_LCDM'])
-            muList.append([muSnoopy, muSnoopyErr, muLCDM])
+        muList = headerData.loc[:, ['mu_Snoopy', 'err_mu_Snoopy', 'mu_LCDM']]
+        muList = muList.apply(pd.to_numeric)
 
-        return np.array(muList)
+        return muList
 
     def plot_mu_vs_peaks(self, muList, peaks):
         count = 0
         fig, ax = plt.subplots(2, 2, sharex='col', sharey='row')
-        for (muSnoopy, muSnoopyErr, muLCDM), (peakPhases, peakFluxes) in zip(muList, peaks):
-            if peakPhases.any():
-                for peakPhase, peakFlux in zip(peakPhases, peakFluxes):
+        muPeaksCombined = pd.concat([muList, peaks], axis=1)
+        for snName, row in muPeaksCombined.iterrows():
+            if row['peakPhases'].any():
+                for peakPhase, peakFlux in zip(row['peakPhases'], row['peakFluxes']):
                     if 15 < peakPhase < 40:  # Second peak
-                        ax[0, 0].errorbar(peakPhase, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
-                        ax[0, 1].errorbar(peakFlux, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[0, 0].errorbar(peakPhase, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[0, 1].errorbar(peakFlux, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
                         count += 1
                     if -15 < peakPhase < 8:  # First peak
-                        ax[1, 0].errorbar(peakPhase, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
-                        ax[1, 1].errorbar(peakFlux, muSnoopy, yerr=muSnoopyErr, fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[1, 0].errorbar(peakPhase, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[1, 1].errorbar(peakFlux,row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
 
         ax[0, 0].set_title('Second Peak')
         ax[0, 0].set_xlabel('Phase (days)')
