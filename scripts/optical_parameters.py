@@ -1,5 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
 
 def read_optical_fitted_table(filename):
     """ Read in optical parameters as a pandas DataFrame. 
@@ -31,8 +33,8 @@ class CompareOpticalAndNIR(object):
             self.opticalData = self.opticalData.loc[names]
 
     def nir_peaks_vs_optical_params(self):
-        nirPeaks = self.nirPeaks[['firstMaxFlux', 'secondMaxFlux']]
-        opticalData = self.opticalData[['mB', 'x1', 'c']]
+        nirPeaks = self.nirPeaks[['secondMaxFlux', 'secondMaxPhase']]
+        opticalData = self.opticalData[['mB', 'x1', 'c', 'x0']]
         fig, ax = plt.subplots(nrows=len(opticalData.columns), ncols=len(nirPeaks.columns), sharex='col', sharey='row')
         fig.subplots_adjust(wspace=0, hspace=0)
         for i, f in enumerate(opticalData.columns):
@@ -41,7 +43,13 @@ class CompareOpticalAndNIR(object):
                 if i == len(opticalData.columns) - 1:
                     ax[i, j].set_xlabel(p)
                 if j == 0:
-                    ax[i, j].set_ylabel(f)
+                    ax[i, j].set_ylabel(f, rotation=0)
+                ax[i, j].yaxis.set_major_locator(plt.MaxNLocator(4))
+                ax[i, j].tick_params(labelleft='off')
+                # ax[i, j].yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.2f'))
+                ax[i, j].yaxis.set_label_coords(-0.2, 0.2)
+        fig.subplots_adjust(left=0.2, right=0.98)
+        fig.suptitle(self.bandName)
         plt.savefig("Figures/%s_opticalParams_vs_NIR_peaks" % self.bandName)
 
 
