@@ -34,7 +34,7 @@ class CompareOpticalAndNIR(object):
 
     def nir_peaks_vs_optical_params(self):
         nirPeaks = self.nirPeaks[['secondMaxFlux', 'secondMaxPhase']]
-        opticalData = self.opticalData[['mB', 'x1', 'c', 'x0']]
+        opticalData = self.opticalData[['x1', 'c']]
         fig, ax = plt.subplots(nrows=len(opticalData.columns), ncols=len(nirPeaks.columns), sharex='col', sharey='row')
         fig.subplots_adjust(wspace=0, hspace=0)
         for i, f in enumerate(opticalData.columns):

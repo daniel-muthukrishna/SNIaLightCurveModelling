@@ -2,11 +2,12 @@ import os
 
 
 def get_filenames(band):
-    directory = os.path.join('data/NIR_Lowz_data', band)
+    scriptDir = os.path.dirname(os.path.realpath(__file__))
+    directory = os.path.join(scriptDir, '../data/NIR_Lowz_data', band)
     filenameList = os.listdir(directory)
     filePathList = [os.path.join(directory, f) for f in filenameList]
 
-    return filePathList
+    return filePathList, scriptDir
 
 
 def get_colors_and_markers():

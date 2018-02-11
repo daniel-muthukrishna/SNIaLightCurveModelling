@@ -5,9 +5,10 @@ from scipy.signal import argrelextrema
 
 
 class LightCurve(object):
-    def __init__(self, filename):
+    def __init__(self, filename, bin_size=1):
         self.filename = filename
         self.snVars, self.data = self.get_data()
+        self.bin_size = bin_size
 
     def get_data(self):
         """
@@ -46,7 +47,7 @@ class LightCurve(object):
         """ Plots the light curve with error bars and a different color for each"""
         data = self.data
         label = os.path.basename(self.filename)
-        if not data['Phase(T_Bmax)'].empty:
+        if not data['Phase(T_Bmax)'].empty and axis is not None:
             axis.errorbar(data['Phase(T_Bmax)'], data['Abs mag'], yerr=data['Error Abs mag'], fmt=cm[1],
                           label=label.split('_')[0], zorder=zorder, color=cm[0], alpha=0.8)
 
@@ -56,7 +57,7 @@ class LightCurve(object):
     def bin_light_curve(self):
         phase = self.data['Phase(T_Bmax)'].values
         absMag = self.data['Abs mag'].values
-        xBins = np.linspace(-20, 100, 121)
+        xBins = np.arange(-10, 100, self.bin_size)
         yBinned = np.interp(x=xBins, xp=phase, fp=absMag, left=np.NaN, right=np.NaN)
 
         return xBins, yBinned

@@ -14,9 +14,9 @@ def main():
     colorMarker = get_colors_and_markers()
 
     for band in bandList:
-        filenameList = get_filenames(band)
+        filenameList, scriptDir = get_filenames(band)
         popStats = PopulationStatistics(filenameList, band)
-        xBinsArray, yBinsArray, peaks, headerData = popStats.plot_binned_light_curves(colorMarker)
+        xBinsArray, yBinsArray, peaks, headerData = popStats.get_binned_light_curves(colorMarker=colorMarker, plot=True, bin_size=1)
         muList = popStats.get_mu(headerData)
         labelledMaxima = popStats.plot_mu_vs_peaks(muList, peaks)
 
