@@ -97,6 +97,7 @@ def gp_model(x, y, yerr, scriptDir):
     plt.errorbar(x, y, yerr=yerr, fmt=".k", capsize=0)
 
     # Plot 24 posterior samples.
+    
     samples = sampler.flatchain
     for s in samples[np.random.randint(len(samples), size=24)]:
         gp.set_parameter_vector(s)

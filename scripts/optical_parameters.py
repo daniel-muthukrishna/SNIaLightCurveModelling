@@ -1,6 +1,10 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from sklearn import linear_model
+from sklearn.metrics import mean_squared_error, r2_score
+from scipy import stats
 
 
 def read_optical_fitted_table(filename):
@@ -34,7 +38,7 @@ class CompareOpticalAndNIR(object):
 
     def nir_peaks_vs_optical_params(self):
         nirPeaks = self.nirPeaks[['secondMaxFlux', 'secondMaxPhase']]
-        opticalData = self.opticalData[['x1', 'c']]
+        opticalData = self.opticalData[['mB', 'x0', 'x1', 'c']]
         fig, ax = plt.subplots(nrows=len(opticalData.columns), ncols=len(nirPeaks.columns), sharex='col', sharey='row')
         fig.subplots_adjust(wspace=0, hspace=0)
         for i, f in enumerate(opticalData.columns):
@@ -52,4 +56,56 @@ class CompareOpticalAndNIR(object):
         fig.suptitle(self.bandName)
         plt.savefig("Figures/%s_opticalParams_vs_NIR_peaks" % self.bandName)
 
+    def x1_vs_second_max_phase(self):
+        x = self.nirPeaks['secondMaxPhase'].values.astype('float')
+        y = self.opticalData['x1'].values.astype('float')
+        yerr = self.opticalData['x1_err'].values.astype('float')
+        notNan = ~np.isnan(x)
+        x = x[notNan]
+        y = y[notNan]
+        yerr = yerr[notNan]
 
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+        x_pred = np.arange(min(x), max(x), 0.1)
+        y_pred = slope * x_pred + intercept
+        print("Slope: {0}, Intercept: {1}, R: {2}, p-value:{3}".format(slope, intercept, r_value, p_value))
+
+        plt.figure()
+        plt.errorbar(x, y, yerr=yerr, fmt='.k')
+        plt.plot(x_pred, y_pred, 'b')
+        plt.title(self.bandName)
+        plt.savefig("Figures/%s_x1_vs_2nd_max_phase.png" % self.bandName)
+
+
+
+        # def lnlike(theta, x, y, yerr):
+        #     m, b, lnf = theta
+        #     model = m * x + b
+        #     inv_sigma2 = 1.0 / (yerr ** 2 + model ** 2 * np.exp(2 * lnf))
+        #     return -0.5 * (np.sum((y - model) ** 2 * inv_sigma2 - np.log(inv_sigma2)))
+        #
+        # def lnprior(theta):
+        #     m, b, lnf = theta
+        #     if -np.inf < m < np.inf and -np.inf < b < np.inf and -np.inf < lnf < np.inf:
+        #         return 0.0
+        #     return -np.inf
+        #
+        # def lnprob(theta, x, y, yerr):
+        #     lp = lnprior(theta)
+        #     if not np.isfinite(lp):
+        #         return -np.inf
+        #     return lp + lnlike(theta, x, y, yerr)
+        #
+        # ndim, nwalkers = 3, 100
+        # pos = [1 + 1e-4 * np.random.randn(ndim) for i in range(nwalkers)]
+        # import emcee
+        # sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(x, y, yerr))
+        # sampler.run_mcmc(pos, 500)
+        # samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
+        #
+        # import corner
+        # fig = corner.corner(samples, labels=["$m$", "$b$", "$\ln\,f$"])
+        # fig.savefig("%s_triangle.png" % self.bandName)
+        #
+        # for m, b, lnf in samples[np.random.randint(len(samples), size=100)]:
+        #     plt.plot(xl, m * xl + b, color="b", alpha=0.1)

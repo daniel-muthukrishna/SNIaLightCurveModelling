@@ -22,6 +22,7 @@ def main():
 
         opticalNIR = CompareOpticalAndNIR('data/Table_salt_snoopy_fittedParams.txt', labelledMaxima, band)
         opticalNIR.nir_peaks_vs_optical_params()
+        opticalNIR.x1_vs_second_max_phase()
 
     plt.show()
 
