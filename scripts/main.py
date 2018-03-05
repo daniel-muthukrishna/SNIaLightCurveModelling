@@ -13,7 +13,8 @@ def main():
     bandList = ['H_band', 'J_Band', 'K_band', 'Y_Band']
     colorMarker = get_colors_and_markers()
 
-    for band in bandList:
+    fig_x1, ax_x1 = plt.subplots(len(bandList), figsize=(6, 10), sharex=True)
+    for i, band in enumerate(bandList):
         filenameList, scriptDir = get_filenames(band)
         popStats = PopulationStatistics(filenameList, band)
         xBinsArray, yBinsArray, peaks, headerData = popStats.get_binned_light_curves(colorMarker=colorMarker, plot=True, bin_size=1)
@@ -22,7 +23,7 @@ def main():
 
         opticalNIR = CompareOpticalAndNIR('data/Table_salt_snoopy_fittedParams.txt', labelledMaxima, band)
         opticalNIR.nir_peaks_vs_optical_params()
-        opticalNIR.x1_vs_second_max_phase()
+        opticalNIR.x1_vs_second_max_phase(fig_x1, ax_x1, i, band)
 
     plt.show()
 

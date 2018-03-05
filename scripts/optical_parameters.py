@@ -56,7 +56,7 @@ class CompareOpticalAndNIR(object):
         fig.suptitle(self.bandName)
         plt.savefig("Figures/%s_opticalParams_vs_NIR_peaks" % self.bandName)
 
-    def x1_vs_second_max_phase(self):
+    def x1_vs_second_max_phase(self, fig=None, ax=None, i=0, band=''):
         x = self.nirPeaks['secondMaxPhase'].values.astype('float')
         y = self.opticalData['x1'].values.astype('float')
         yerr = self.opticalData['x1_err'].values.astype('float')
@@ -73,10 +73,19 @@ class CompareOpticalAndNIR(object):
         plt.figure()
         plt.errorbar(x, y, yerr=yerr, fmt='.k')
         plt.plot(x_pred, y_pred, 'b')
+        plt.xlabel('NIR Second maximum phase (days)')
+        plt.ylabel('Optical Stretch, x1')
         plt.title(self.bandName)
         plt.savefig("Figures/%s_x1_vs_2nd_max_phase.png" % self.bandName)
 
-
+        if fig is not None:
+            ax[i].errorbar(x, y, yerr=yerr, fmt='.k')
+            ax[i].plot(x_pred, y_pred, 'b')
+            ax[i].set_ylabel('{} optical x1'.format(band))
+            ax[-1].set_xlabel('NIR Second maximum phase (days)')
+            fig.subplots_adjust(hspace=0)
+            plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+            fig.savefig("Figures/x1_vs_2nd_max_phase.png", bbox_inches='tight')
 
         # def lnlike(theta, x, y, yerr):
         #     m, b, lnf = theta

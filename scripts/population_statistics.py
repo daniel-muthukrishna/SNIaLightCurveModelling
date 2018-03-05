@@ -60,6 +60,8 @@ class PopulationStatistics(object):
             try:
                 xBins, yBins = lightCurve.bin_light_curve()
                 peakPhases, peakFluxes = lightCurve.get_peaks(axis=ax[1], cm=colorMarker[i], zorder=zorder)
+                if peakPhases is None:
+                    continue
                 header = lightCurve.snVars
                 xBinsList.append(xBins)
                 yBinsList.append(yBins)

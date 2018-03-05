@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 from scipy.signal import argrelextrema
+from scipy import interpolate
+import matplotlib.pyplot as plt
 
 
 class LightCurve(object):
@@ -58,13 +60,31 @@ class LightCurve(object):
         phase = self.data['Phase(T_Bmax)'].values
         absMag = self.data['Abs mag'].values
         xBins = np.arange(-10, 100, self.bin_size)
-        yBinned = np.interp(x=xBins, xp=phase, fp=absMag, left=np.NaN, right=np.NaN)
+        # yBinned = np.interp(x=xBins, xp=phase, fp=absMag, left=np.NaN, right=np.NaN)
+        if len(phase) <= 3:
+            return None, None
+
+        # Repeat values cause error in spline interpolation
+        phase, unique_args = np.unique(phase, return_index=True)
+        absMag = absMag[unique_args]
+
+        y = interpolate.interp1d(x=phase, y=absMag, kind='slinear', bounds_error=False, fill_value=np.NaN)
+        yBinned = y(xBins)
+        # plt.figure()
+        # plt.errorbar(phase, absMag, yerr=self.data['Error Abs mag'], fmt='o')
+        # plt.plot(xBins, yBinned)
+        # plt.gca().invert_yaxis()
+        # plt.xlabel('Phase (days)')
+        # plt.ylabel('Abs Mag')
+        # plt.show()
 
         return xBins, yBinned
 
     def get_peaks(self, axis=None, cm=None, zorder=None):
 
         xBins, yBins = self.bin_light_curve()
+        if xBins is None:
+            return None, None
 
         peakIndexes = argrelextrema(yBins, np.less)
         peakPhases = xBins[peakIndexes]
