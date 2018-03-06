@@ -11,7 +11,7 @@ class PopulationStatistics(object):
         self.filenameList = filenameList
         self.bandName = bandName
 
-    def get_binned_light_curves(self, colorMarker=None, plot=True, bin_size=1):
+    def get_binned_light_curves(self, colorMarker=None, plot=True, bin_size=1, fig_spl=None, ax_spl=None, band_spl='', i_spl=0):
         """ Get the peaks and header data for each supernova. And plot the binned light curves.
         
         Parameters
@@ -28,10 +28,10 @@ class PopulationStatistics(object):
         xBinsArray : 1D numpy array
             Binned values of the supernova age.
         yBinsArray : 1D numpy array
-            Binned values of the supernova flux.
+            Binned values of the supernova mags.
         peaks : pandas DataFrame
             Each row in the DataFrame contains information about each supernova, respectively. 
-            Each column is a 2 x 1 list of the phase and flux of a peak/maximum of the light curve.
+            Each column is a 2 x 1 list of the phase and Mag of a peak/maximum of the light curve.
         headerData : pandas DataFrame
             Each row in the DataFrame contains information about each supernova, respectively.
             The columns contain the values from the header of each supernova data file (from self.filename). 
@@ -58,14 +58,14 @@ class PopulationStatistics(object):
             if plot:
                 lightCurve.plot_light_curves(axis=ax[0], cm=colorMarker[i], zorder=zorder)
             try:
-                xBins, yBins = lightCurve.bin_light_curve()
-                peakPhases, peakFluxes = lightCurve.get_peaks(axis=ax[1], cm=colorMarker[i], zorder=zorder)
+                xBins, yBins = lightCurve.bin_light_curve(fig_spl, ax_spl, band_spl, i_spl)
+                peakPhases, peakMags = lightCurve.get_peaks(axis=ax[1], cm=colorMarker[i], zorder=zorder)
                 if peakPhases is None:
                     continue
                 header = lightCurve.snVars
                 xBinsList.append(xBins)
                 yBinsList.append(yBins)
-                peaks[snName] = {'peakPhases': peakPhases, 'peakFluxes': peakFluxes}
+                peaks[snName] = {'peakPhases': peakPhases, 'peakMags': peakMags}
                 headerData[snName] = header
             except TypeError:
                 pass
@@ -102,22 +102,22 @@ class PopulationStatistics(object):
             labelledMaxima[snName] = {}
             if row['peakPhases'].any():
                 count = {'first': 0, 'second': 0, 'other': 0}
-                for peakPhase, peakFlux in zip(row['peakPhases'], row['peakFluxes']):
+                for peakPhase, peakMag in zip(row['peakPhases'], row['peakMags']):
                     if -15 < peakPhase < 8:  # First peak
                         ax[1, 0].errorbar(peakPhase, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
-                        ax[1, 1].errorbar(peakFlux,row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[1, 1].errorbar(peakMag,row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
                         labelledMaxima[snName]['firstMaxPhase'] = peakPhase
-                        labelledMaxima[snName]['firstMaxFlux'] = peakFlux
+                        labelledMaxima[snName]['firstMaxMag'] = peakMag
                         count['first'] += 1
                     elif 15 < peakPhase < 40:  # Second peak
                         ax[0, 0].errorbar(peakPhase, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
-                        ax[0, 1].errorbar(peakFlux, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
+                        ax[0, 1].errorbar(peakMag, row['mu_Snoopy'], yerr=row['err_mu_Snoopy'], fmt='o', color='#1f77b4', alpha=0.5)
                         labelledMaxima[snName]['secondMaxPhase'] = peakPhase
-                        labelledMaxima[snName]['secondMaxFlux'] = peakFlux
+                        labelledMaxima[snName]['secondMaxMag'] = peakMag
                         count['second'] += 1
                     else:
                         labelledMaxima[snName]['otherMaxPhase'] = peakPhase
-                        labelledMaxima[snName]['otherMaxFlux'] = peakFlux
+                        labelledMaxima[snName]['otherMaxMag'] = peakMag
                         count['other'] += 1
 
                 if count['first'] > 1:
@@ -134,11 +134,11 @@ class PopulationStatistics(object):
         ax[1, 0].set_ylabel('mu_Snoopy')
 
         ax[0, 1].set_title('First Peak')
-        ax[0, 1].set_xlabel('Peak Flux')
+        ax[0, 1].set_xlabel('Peak Mag')
         ax[0, 1].set_ylabel('mu_Snoopy')
 
         ax[1, 1].set_title('First Peak')
-        ax[1, 1].set_xlabel('Peak Flux')
+        ax[1, 1].set_xlabel('Peak Mag')
         ax[1, 1].set_ylabel('mu_Snoopy')
 
         fig.suptitle(self.bandName)

@@ -56,7 +56,7 @@ class LightCurve(object):
             # plt.figure()
             # plt.errorbar(data['Phase(T_Bmax)'], data['App mag'], yerr=data['Error App mag'], fmt='o')
 
-    def bin_light_curve(self):
+    def bin_light_curve(self, fig=None, ax=None, band=None, i=0):
         phase = self.data['Phase(T_Bmax)'].values
         absMag = self.data['Abs mag'].values
         xBins = np.arange(-10, 100, self.bin_size)
@@ -70,13 +70,18 @@ class LightCurve(object):
 
         y = interpolate.interp1d(x=phase, y=absMag, kind='slinear', bounds_error=False, fill_value=np.NaN)
         yBinned = y(xBins)
-        # plt.figure()
-        # plt.errorbar(phase, absMag, yerr=self.data['Error Abs mag'], fmt='o')
-        # plt.plot(xBins, yBinned)
-        # plt.gca().invert_yaxis()
-        # plt.xlabel('Phase (days)')
-        # plt.ylabel('Abs Mag')
-        # plt.show()
+        # if fig is not None:
+        #     snName = os.path.basename(self.filename).split('_')[0]
+        #     if 'sn2007le__u_CSP_24_CSP' in self.filename or 'sn2007le__B_19_V_2_CfA_K' in self.filename:
+        #         ax[i].errorbar(phase, absMag, yerr=self.data['Error Abs mag'], fmt='o')
+        #         ax[i].plot(xBins, yBinned)
+        #         ax[i].invert_yaxis()
+        #         ax[i].set_ylabel('Abs Mag')
+        #         ax[-1].set_xlabel('Phase (days)')
+        #         ax[i].text(0.05, 0.05, "{}: {}".format(band, snName), transform=ax[i].transAxes, fontsize=11)
+        #         fig.subplots_adjust(hspace=0)
+        #         plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+        #         fig.savefig("Figures/spline_interp.png", bbox_inches='tight')
 
         return xBins, yBinned
 
@@ -88,7 +93,7 @@ class LightCurve(object):
 
         peakIndexes = argrelextrema(yBins, np.less)
         peakPhases = xBins[peakIndexes]
-        peakFluxes = yBins[peakIndexes]
+        peakMags = yBins[peakIndexes]
 
         troughIndexes = argrelextrema(yBins, np.greater)
         troughPhases = xBins[troughIndexes]
@@ -103,10 +108,13 @@ class LightCurve(object):
                     if countTroughsNearPeak == 1:
                         deleteIndexes.append(i)
                     break
+                if not -8 < peak < 45:  # Only plot peaks in this range
+                    deleteIndexes.append(i)
+
         peakPhases = np.delete(peakPhases, deleteIndexes)
-        peakFluxes = np.delete(peakFluxes, deleteIndexes)
+        peakMags = np.delete(peakMags, deleteIndexes)
 
         if axis is not None:
-            axis.plot(peakPhases, peakFluxes, 'o', color=cm[0], marker=cm[1], zorder=zorder)
+            axis.plot(peakPhases, peakMags, 'o', color=cm[0], marker=cm[1], zorder=zorder)
 
-        return peakPhases, peakFluxes
+        return peakPhases, peakMags

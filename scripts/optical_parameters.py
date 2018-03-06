@@ -25,6 +25,13 @@ class CompareOpticalAndNIR(object):
         self.bandName = bandName
         self.common_sn()
 
+        # Add AbsMag column
+        self.opticalData = self.opticalData.astype('float')
+        self.opticalData['AbsMagB'] = self.opticalData['mB'] - self.opticalData['mu_Snoopy']
+
+        # Add nirpeaks flux ratio
+        self.nirPeaks['SecondMaxMag - FirstMaxMag'] = self.nirPeaks['secondMaxMag'] - self.nirPeaks['firstMaxMag']
+
     def common_sn(self):
         """Find the common supernova names between optical and NIR 
         and create new DataFrames that contain only information for common SNe."""
@@ -37,8 +44,8 @@ class CompareOpticalAndNIR(object):
             self.opticalData = self.opticalData.loc[names]
 
     def nir_peaks_vs_optical_params(self):
-        nirPeaks = self.nirPeaks[['secondMaxFlux', 'secondMaxPhase']]
-        opticalData = self.opticalData[['mB', 'x0', 'x1', 'c']]
+        nirPeaks = self.nirPeaks[['SecondMaxMag - FirstMaxMag', 'secondMaxPhase']]
+        opticalData = self.opticalData[['AbsMagB', 'x0', 'x1', 'c']]
         fig, ax = plt.subplots(nrows=len(opticalData.columns), ncols=len(nirPeaks.columns), sharex='col', sharey='row')
         fig.subplots_adjust(wspace=0, hspace=0)
         for i, f in enumerate(opticalData.columns):
@@ -56,14 +63,14 @@ class CompareOpticalAndNIR(object):
         fig.suptitle(self.bandName)
         plt.savefig("Figures/%s_opticalParams_vs_NIR_peaks" % self.bandName)
 
-    def x1_vs_second_max_phase(self, fig=None, ax=None, i=0, band=''):
-        x = self.nirPeaks['secondMaxPhase'].values.astype('float')
-        y = self.opticalData['x1'].values.astype('float')
-        yerr = self.opticalData['x1_err'].values.astype('float')
-        notNan = ~np.isnan(x)
+    def x1_vs_second_max_phase(self):
+        y = self.nirPeaks['secondMaxPhase'].values.astype('float')
+        x = self.opticalData['x1'].values.astype('float')
+        # yerr = self.opticalData['x1_err'].values.astype('float')
+        notNan = ~np.isnan(y)
         x = x[notNan]
         y = y[notNan]
-        yerr = yerr[notNan]
+        # yerr = yerr[notNan]
 
         slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
         x_pred = np.arange(min(x), max(x), 0.1)
@@ -71,50 +78,60 @@ class CompareOpticalAndNIR(object):
         print("Slope: {0}, Intercept: {1}, R: {2}, p-value:{3}".format(slope, intercept, r_value, p_value))
 
         plt.figure()
-        plt.errorbar(x, y, yerr=yerr, fmt='.k')
+        plt.plot(x, y, '.k')
         plt.plot(x_pred, y_pred, 'b')
-        plt.xlabel('NIR Second maximum phase (days)')
+        plt.xlabel('2nd max phase')
         plt.ylabel('Optical Stretch, x1')
         plt.title(self.bandName)
         plt.savefig("Figures/%s_x1_vs_2nd_max_phase.png" % self.bandName)
 
-        if fig is not None:
-            ax[i].errorbar(x, y, yerr=yerr, fmt='.k')
-            ax[i].plot(x_pred, y_pred, 'b')
-            ax[i].set_ylabel('{} optical x1'.format(band))
-            ax[-1].set_xlabel('NIR Second maximum phase (days)')
-            fig.subplots_adjust(hspace=0)
-            plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
-            fig.savefig("Figures/x1_vs_2nd_max_phase.png", bbox_inches='tight')
+    def plot_parameters(self, fig=None, ax=None, i=0, band='', xname='', yname='', xlabel=None, ylabel=None, savename=None):
+        # Get data
+        if xname in self.nirPeaks:
+            x = self.nirPeaks[xname].values.astype('float')
+        elif xname in self.opticalData:
+            x = self.opticalData[xname].values.astype('float')
+        else:
+            raise ValueError("Invalid x parameter: {}".format(xname))
+        if yname in self.nirPeaks:
+            y = self.nirPeaks[yname].values.astype('float')
+        elif yname in self.opticalData:
+            y = self.opticalData[yname].values.astype('float')
+        else:
+            raise ValueError("Invalid y parameter: {}".format(yname))
 
-        # def lnlike(theta, x, y, yerr):
-        #     m, b, lnf = theta
-        #     model = m * x + b
-        #     inv_sigma2 = 1.0 / (yerr ** 2 + model ** 2 * np.exp(2 * lnf))
-        #     return -0.5 * (np.sum((y - model) ** 2 * inv_sigma2 - np.log(inv_sigma2)))
-        #
-        # def lnprior(theta):
-        #     m, b, lnf = theta
-        #     if -np.inf < m < np.inf and -np.inf < b < np.inf and -np.inf < lnf < np.inf:
-        #         return 0.0
-        #     return -np.inf
-        #
-        # def lnprob(theta, x, y, yerr):
-        #     lp = lnprior(theta)
-        #     if not np.isfinite(lp):
-        #         return -np.inf
-        #     return lp + lnlike(theta, x, y, yerr)
-        #
-        # ndim, nwalkers = 3, 100
-        # pos = [1 + 1e-4 * np.random.randn(ndim) for i in range(nwalkers)]
-        # import emcee
-        # sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(x, y, yerr))
-        # sampler.run_mcmc(pos, 500)
-        # samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
-        #
-        # import corner
-        # fig = corner.corner(samples, labels=["$m$", "$b$", "$\ln\,f$"])
-        # fig.savefig("%s_triangle.png" % self.bandName)
-        #
-        # for m, b, lnf in samples[np.random.randint(len(samples), size=100)]:
-        #     plt.plot(xl, m * xl + b, color="b", alpha=0.1)
+        # Remove NaNs
+        notNan = ~np.isnan(x)
+        x = x[notNan]
+        y = y[notNan]
+        notNan = ~np.isnan(y)
+        x = x[notNan]
+        y = y[notNan]
+
+        # Choose axis labels
+        if not xlabel:
+            xlabel = xname
+        if not ylabel:
+            ylabel = yname
+        if not savename:
+            savename = "{}_vs_{}".format(xname, yname)
+
+        # Fit trend line
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+        x_pred = np.arange(min(x), max(x), 0.1)
+        y_pred = slope * x_pred + intercept
+        print("{}: {} vs {}".format(band, xname, yname))
+        print("Slope: {0}, Intercept: {1}, R: {2}, p-value:{3}".format(slope, intercept, r_value, p_value))
+
+        # Plot yname vs xname
+        ax[i].plot(x, y, '.k')
+        ax[i].plot(x_pred, y_pred, 'b')
+        ax[i].set_ylabel(ylabel)
+        ax[-1].set_xlabel(xlabel)
+        ax[i].text(0.05, 0.85, band, transform=ax[i].transAxes, fontsize=15)
+        if 'mag' in yname.lower():
+            ax[i].invert_yaxis()
+        fig.subplots_adjust(hspace=0)
+        plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+        fig.savefig("Figures/{}.png".format(savename), bbox_inches='tight')
+
