@@ -5,6 +5,7 @@ import matplotlib.ticker as ticker
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from scipy import stats
+import copy
 
 
 def read_optical_fitted_table(filename):
@@ -23,7 +24,6 @@ class CompareOpticalAndNIR(object):
         self.opticalData = read_optical_fitted_table(opticalDataFilename)
         self.nirPeaks = nirPeaks
         self.bandName = bandName
-        self.common_sn()
 
         # Add AbsMag column
         self.opticalData = self.opticalData.astype('float')
@@ -32,20 +32,27 @@ class CompareOpticalAndNIR(object):
         # Add nirpeaks flux ratio
         self.nirPeaks['SecondMaxMag - FirstMaxMag'] = self.nirPeaks['secondMaxMag'] - self.nirPeaks['firstMaxMag']
 
-    def common_sn(self):
+    def common_sn(self, nirPeaks, opticalData):
         """Find the common supernova names between optical and NIR 
         and create new DataFrames that contain only information for common SNe."""
-        nirNames = self.nirPeaks.index
-        opticalNames = self.opticalData.index
+        nirPeaks = copy.deepcopy(nirPeaks)
+        opticalData = copy.deepcopy(opticalData)
+
+        nirNames = nirPeaks.index
+        opticalNames = opticalData.index
         names = opticalNames.intersection(nirNames)
-        self.nirPeaks = self.nirPeaks.loc[names]
+        nirPeaks = nirPeaks.loc[names]
         if not names.equals(opticalNames):
             print("Some NIR SNe don't have optical data in %s" % self.bandName)
-            self.opticalData = self.opticalData.loc[names]
+            opticalData = opticalData.loc[names]
+
+        return nirPeaks, opticalData
 
     def nir_peaks_vs_optical_params(self):
         nirPeaks = self.nirPeaks[['SecondMaxMag - FirstMaxMag', 'secondMaxPhase']]
         opticalData = self.opticalData[['AbsMagB', 'x0', 'x1', 'c']]
+        nirPeaks, opticalData = self.common_sn(nirPeaks, opticalData)
+
         fig, ax = plt.subplots(nrows=len(opticalData.columns), ncols=len(nirPeaks.columns), sharex='col', sharey='row')
         fig.subplots_adjust(wspace=0, hspace=0)
         for i, f in enumerate(opticalData.columns):
@@ -63,40 +70,26 @@ class CompareOpticalAndNIR(object):
         fig.suptitle(self.bandName)
         plt.savefig("Figures/%s_opticalParams_vs_NIR_peaks" % self.bandName)
 
-    def x1_vs_second_max_phase(self):
-        y = self.nirPeaks['secondMaxPhase'].values.astype('float')
-        x = self.opticalData['x1'].values.astype('float')
-        # yerr = self.opticalData['x1_err'].values.astype('float')
-        notNan = ~np.isnan(y)
-        x = x[notNan]
-        y = y[notNan]
-        # yerr = yerr[notNan]
+    def plot_parameters(self, fig=None, ax=None, i=0, band='', figinfo=None):
+        xname, yname, xlabel, ylabel, savename, sharey = figinfo
 
-        slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-        x_pred = np.arange(min(x), max(x), 0.1)
-        y_pred = slope * x_pred + intercept
-        print("Slope: {0}, Intercept: {1}, R: {2}, p-value:{3}".format(slope, intercept, r_value, p_value))
+        # Only plot supernovae for which we have both optical and NIR data
+        if xname in self.opticalData or yname in self.opticalData:
+            nirPeaks, opticalData = self.common_sn(self.nirPeaks, self.opticalData)
+        else:
+            nirPeaks, opticalData = copy.deepcopy(self.nirPeaks), copy.deepcopy(self.opticalData)
 
-        plt.figure()
-        plt.plot(x, y, '.k')
-        plt.plot(x_pred, y_pred, 'b')
-        plt.xlabel('2nd max phase')
-        plt.ylabel('Optical Stretch, x1')
-        plt.title(self.bandName)
-        plt.savefig("Figures/%s_x1_vs_2nd_max_phase.png" % self.bandName)
-
-    def plot_parameters(self, fig=None, ax=None, i=0, band='', xname='', yname='', xlabel=None, ylabel=None, savename=None):
         # Get data
         if xname in self.nirPeaks:
-            x = self.nirPeaks[xname].values.astype('float')
+            x = nirPeaks[xname].values.astype('float')
         elif xname in self.opticalData:
-            x = self.opticalData[xname].values.astype('float')
+            x = opticalData[xname].values.astype('float')
         else:
             raise ValueError("Invalid x parameter: {}".format(xname))
         if yname in self.nirPeaks:
-            y = self.nirPeaks[yname].values.astype('float')
+            y = nirPeaks[yname].values.astype('float')
         elif yname in self.opticalData:
-            y = self.opticalData[yname].values.astype('float')
+            y = opticalData[yname].values.astype('float')
         else:
             raise ValueError("Invalid y parameter: {}".format(yname))
 
@@ -114,7 +107,7 @@ class CompareOpticalAndNIR(object):
         if not ylabel:
             ylabel = yname
         if not savename:
-            savename = "{}_vs_{}".format(xname, yname)
+            savename = "{}_vs_{}".format(yname, xname)
 
         # Fit trend line
         slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
@@ -129,8 +122,10 @@ class CompareOpticalAndNIR(object):
         ax[i].set_ylabel(ylabel)
         ax[-1].set_xlabel(xlabel)
         ax[i].text(0.05, 0.85, band, transform=ax[i].transAxes, fontsize=15)
-        if 'mag' in yname.lower():
+        if 'mag' in yname.lower() and sharey is False:
             ax[i].invert_yaxis()
+        ax[i].text(0.7, 0.15, 'R=%.3f' % r_value, transform=ax[i].transAxes)
+        ax[i].text(0.7, 0.05, 'p_value=%.3f' % p_value, transform=ax[i].transAxes)
         fig.subplots_adjust(hspace=0)
         plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
         fig.savefig("Figures/{}.png".format(savename), bbox_inches='tight')
