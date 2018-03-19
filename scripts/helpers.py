@@ -15,7 +15,7 @@ def get_colors_and_markers():
               '#17becf', 'k', '#911eb4', '#800000', '#aa6e28']
     markers = ['o', 'v', 'P', '*', 'D', 'X', 'p', '3', 's', 'x', 'p']
     colorMarker = []
-    for color in colors:
-        for marker in markers:
+    for marker in markers:
+        for color in colors:
             colorMarker.append((color, marker))
     return colorMarker

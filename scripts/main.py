@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 from scripts.population_statistics import PopulationStatistics
 from scripts.helpers import get_filenames, get_colors_and_markers
-from scripts.optical_parameters import CompareOpticalAndNIR
+from scripts.optical_parameters import CompareOpticalAndNIR, common_optical_nir_sn
+from scripts.plot_specific_light_curves import plot_specific_light_curves
 
 
 def main():
@@ -34,16 +35,19 @@ def main():
         popStats = PopulationStatistics(filenameList, band)
         xBinsArray, yBinsArray, peaks, headerData = popStats.get_binned_light_curves(colorMarker=colorMarker, plot=True, bin_size=1, fig_spl=fig[0], ax_spl=ax[0], band_spl=band, i_spl=i)
         muList = popStats.get_mu(headerData)
-        labelledMaxima = popStats.plot_mu_vs_peaks(muList, peaks)
+        nirPeaks = popStats.plot_mu_vs_peaks(muList, peaks)
 
-        opticalNIR = CompareOpticalAndNIR('data/Table_salt_snoopy_fittedParams.txt', labelledMaxima, band)
-        opticalNIR.nir_peaks_vs_optical_params()
-        opticalNIR.plot_parameters(fig=fig[1], ax=ax[1], i=i, band=band, figinfo=figinfo[1])
-        opticalNIR.plot_parameters(fig=fig[2], ax=ax[2], i=i, band=band, figinfo=figinfo[2])
-        opticalNIR.plot_parameters(fig=fig[3], ax=ax[3], i=i, band=band, figinfo=figinfo[3])
-        opticalNIR.plot_parameters(fig=fig[4], ax=ax[4], i=i, band=band, figinfo=figinfo[4])
-        opticalNIR.plot_parameters(fig=fig[5], ax=ax[5], i=i, band=band, figinfo=figinfo[5])
+        # opticalNIR = CompareOpticalAndNIR('data/Table_salt_snoopy_fittedParams.txt', nirPeaks, band)
+        # opticalNIR.nir_peaks_vs_optical_params()
+        # opticalNIR.plot_parameters(fig=fig[1], ax=ax[1], i=i, band=band, figinfo=figinfo[1])
+        # opticalNIR.plot_parameters(fig=fig[2], ax=ax[2], i=i, band=band, figinfo=figinfo[2])
+        # opticalNIR.plot_parameters(fig=fig[3], ax=ax[3], i=i, band=band, figinfo=figinfo[3])
+        # opticalNIR.plot_parameters(fig=fig[4], ax=ax[4], i=i, band=band, figinfo=figinfo[4])
+        # opticalNIR.plot_parameters(fig=fig[5], ax=ax[5], i=i, band=band, figinfo=figinfo[5])
+        #
 
+        plot_specific_light_curves(filenameList='common_optical_nir', colorMarker=colorMarker, bin_size=1, band=band,
+                                   nirPeaks=nirPeaks, opticalDataFilename='data/Table_salt_snoopy_fittedParams.txt')
 
         # Get list of sn name
         for fname in popStats.filenameList:
@@ -51,8 +55,12 @@ def main():
             snNames[band].append(snName)
         snNames[band] = set(snNames[band])
 
+
     common_sn = list(snNames['Y'] & snNames['J'] & snNames['H'] & snNames['K'])
     print(common_sn)
+
+
+
     return common_sn
 
 

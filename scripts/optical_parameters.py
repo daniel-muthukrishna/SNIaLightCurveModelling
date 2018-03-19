@@ -19,6 +19,23 @@ def read_optical_fitted_table(filename):
     return data
 
 
+def common_optical_nir_sn(nirPeaks, opticalData, bandName):
+    """Find the common supernova names between optical and NIR
+    and create new DataFrames that contain only information for common SNe."""
+    nirPeaks = copy.deepcopy(nirPeaks)
+    opticalData = copy.deepcopy(opticalData)
+
+    nirNames = nirPeaks.index
+    opticalNames = opticalData.index
+    names = opticalNames.intersection(nirNames)
+    nirPeaks = nirPeaks.loc[names]
+    if not names.equals(opticalNames):
+        print("Some NIR SNe don't have optical data in %s" % bandName)
+        opticalData = opticalData.loc[names]
+
+    return nirPeaks, opticalData
+
+
 class CompareOpticalAndNIR(object):
     def __init__(self, opticalDataFilename, nirPeaks, bandName):
         self.opticalData = read_optical_fitted_table(opticalDataFilename)
@@ -32,26 +49,10 @@ class CompareOpticalAndNIR(object):
         # Add nirpeaks flux ratio
         self.nirPeaks['SecondMaxMag - FirstMaxMag'] = self.nirPeaks['secondMaxMag'] - self.nirPeaks['firstMaxMag']
 
-    def common_sn(self, nirPeaks, opticalData):
-        """Find the common supernova names between optical and NIR 
-        and create new DataFrames that contain only information for common SNe."""
-        nirPeaks = copy.deepcopy(nirPeaks)
-        opticalData = copy.deepcopy(opticalData)
-
-        nirNames = nirPeaks.index
-        opticalNames = opticalData.index
-        names = opticalNames.intersection(nirNames)
-        nirPeaks = nirPeaks.loc[names]
-        if not names.equals(opticalNames):
-            print("Some NIR SNe don't have optical data in %s" % self.bandName)
-            opticalData = opticalData.loc[names]
-
-        return nirPeaks, opticalData
-
     def nir_peaks_vs_optical_params(self):
         nirPeaks = self.nirPeaks[['SecondMaxMag - FirstMaxMag', 'secondMaxPhase']]
         opticalData = self.opticalData[['AbsMagB', 'x0', 'x1', 'c']]
-        nirPeaks, opticalData = self.common_sn(nirPeaks, opticalData)
+        nirPeaks, opticalData = common_optical_nir_sn(nirPeaks, opticalData, self.bandName)
 
         fig, ax = plt.subplots(nrows=len(opticalData.columns), ncols=len(nirPeaks.columns), sharex='col', sharey='row')
         fig.subplots_adjust(wspace=0, hspace=0)
@@ -75,7 +76,7 @@ class CompareOpticalAndNIR(object):
 
         # Only plot supernovae for which we have both optical and NIR data
         if xname in self.opticalData or yname in self.opticalData:
-            nirPeaks, opticalData = self.common_sn(self.nirPeaks, self.opticalData)
+            nirPeaks, opticalData = common_optical_nir_sn(self.nirPeaks, self.opticalData, self.bandName)
         else:
             nirPeaks, opticalData = copy.deepcopy(self.nirPeaks), copy.deepcopy(self.opticalData)
 

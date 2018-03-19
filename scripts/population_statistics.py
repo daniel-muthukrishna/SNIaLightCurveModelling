@@ -147,3 +147,5 @@ class PopulationStatistics(object):
         labelledMaxima = pd.DataFrame.from_dict(labelledMaxima).transpose()
 
         return labelledMaxima
+
+
