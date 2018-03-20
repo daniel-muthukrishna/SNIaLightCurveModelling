@@ -33,6 +33,11 @@ def main():
     # figA, axA = plt.subplots(1, figsize=(12, 10))
     # axA.invert_yaxis()
     # linestyles = ['-', '--']
+    figA, axA = {}, {}
+    for i in range(100):
+        figA[i], axA[i] = plt.subplots(1, figsize=(12, 10))
+        axA[i].invert_yaxis()
+    linestyles = ['-', '--']
     for i, band in enumerate(bandList):
         filenameList, scriptDir = get_filenames(band)
         popStats = PopulationStatistics(filenameList, band)
@@ -49,10 +54,15 @@ def main():
         # opticalNIR.plot_parameters(fig=fig[5], ax=ax[5], i=i, band=band, figinfo=figinfo[5])
         #
 
-        plot_specific_light_curves(filenameList='common_optical_nir', colorMarker=colorMarker, bin_size=1, band=band,
+        # plot_specific_light_curves(filenameList='common_optical_nir', colorMarker=colorMarker, bin_size=1, band=band,
+        #                            nirPeaks=nirPeaks, opticalDataFilename='data/Table_salt_snoopy_fittedParams.txt',
+        #                            title='Light curves with x1 values', savename='lightcurves_with_x1_vals_with_offset',
+        #                            offsetFlag=True, plotSpline=True)  # , fig_in=figA, ax_in=axA, linestyle=linestyles[i])
+
+        plot_specific_light_curves(filenameList='common_optical_nir', colorMarker=('k', 'o'), bin_size=1, band=band,
                                    nirPeaks=nirPeaks, opticalDataFilename='data/Table_salt_snoopy_fittedParams.txt',
-                                   title='Light curves with x1 values', savename='lightcurves_with_x1_vals_with_offset',
-                                   offsetFlag=True, plotSpline=True)  # , fig=figA, ax=axA, linestyle=linestyles[i])
+                                   title='', savename='', individualplots=True,
+                                   offsetFlag=False, plotSpline=True, fig_in=figA, ax_in=axA, linestyle=linestyles[i])
 
         # lowx1List = (['sn2006kf', 'sn2006D', 'sn2006bh', 'sn2005ki'], 'low x1', 'low_x1')
         # midx1List = (['sn2007af', 'sn2007jg'], 'mid x1', 'mid_x1')
