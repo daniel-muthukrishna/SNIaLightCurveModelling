@@ -71,7 +71,7 @@ class CompareOpticalAndNIR(object):
         fig.suptitle(self.bandName)
         plt.savefig("Figures/%s_opticalParams_vs_NIR_peaks" % self.bandName)
 
-    def plot_parameters(self, fig=None, ax=None, i=0, band='', figinfo=None):
+    def plot_parameters(self, fig=None, ax=None, i=0, band='', figinfo=None, label=True):
         xname, yname, xlabel, ylabel, savename, sharey = figinfo
 
         # Only plot supernovae for which we have both optical and NIR data
@@ -94,13 +94,17 @@ class CompareOpticalAndNIR(object):
         else:
             raise ValueError("Invalid y parameter: {}".format(yname))
 
+        snNames = np.array(nirPeaks.index)
+
         # Remove NaNs
         notNan = ~np.isnan(x)
         x = x[notNan]
         y = y[notNan]
+        snNames = snNames[notNan]
         notNan = ~np.isnan(y)
         x = x[notNan]
         y = y[notNan]
+        snNames = snNames[notNan]
 
         # Choose axis labels
         if not xlabel:
@@ -118,7 +122,13 @@ class CompareOpticalAndNIR(object):
         print("Slope: {0}, Intercept: {1}, R: {2}, p-value:{3}".format(slope, intercept, r_value, p_value))
 
         # Plot yname vs xname
-        ax[i].plot(x, y, '.k')
+        if label is True:
+            for j in range(len(x)):
+                ax[i].scatter(x[j], y[j], label="{}, {}".format(snNames[j], x[j]))
+            ax[i].legend(loc=2, bbox_to_anchor=(1.01, 1), ncol=2)
+        else:
+            ax[i].plot(x, y, '.k')
+
         ax[i].plot(x_pred, y_pred, 'b')
         ax[i].set_ylabel(ylabel)
         ax[-1].set_xlabel(xlabel)

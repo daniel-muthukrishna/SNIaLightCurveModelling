@@ -13,7 +13,7 @@ from celerite import terms
 def get_data(band):
     filenameList, scriptDir = get_filenames(band)
     popStats = PopulationStatistics(filenameList, band)
-    xBinsArray, yBinsArray, peaks, headerData = popStats.get_binned_light_curves(plot=False, bin_size=4)
+    xBinsArray, yBinsArray, peaks, headerData = popStats.get_binned_light_curves(plot=False, bin_size=4, interp_kind='cubic')
     x = xBinsArray[0]  # Binned epochs
     y = np.nanmean(yBinsArray, axis=0)  # Average Light curve
     yerr = np.nanstd(yBinsArray, axis=0)  # Stand Deviation of all light curves

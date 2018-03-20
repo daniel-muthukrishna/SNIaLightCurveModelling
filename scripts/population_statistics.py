@@ -11,7 +11,7 @@ class PopulationStatistics(object):
         self.filenameList = filenameList
         self.bandName = bandName
 
-    def get_binned_light_curves(self, colorMarker=None, plot=True, bin_size=1, fig_spl=None, ax_spl=None, band_spl='', i_spl=0):
+    def get_binned_light_curves(self, colorMarker=None, plot=True, bin_size=1, fig_spl=None, ax_spl=None, band_spl='', i_spl=0, interp_kind='cubic'):
         """ Get the peaks and header data for each supernova. And plot the binned light curves.
         
         Parameters
@@ -54,7 +54,7 @@ class PopulationStatistics(object):
         for i, filename in enumerate(self.filenameList):
             snName = os.path.basename(filename).split('_')[0]
             zorder -= 1
-            lightCurve = LightCurve(filename, bin_size=bin_size)
+            lightCurve = LightCurve(filename, bin_size=bin_size, interpKind=interp_kind)
             if plot:
                 lightCurve.plot_light_curves(axis=ax[0], cm=colorMarker[i], zorder=zorder)
             try:

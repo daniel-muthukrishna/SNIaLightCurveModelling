@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 
 
 class LightCurve(object):
-    def __init__(self, filename, bin_size=1):
+    def __init__(self, filename, bin_size=1, interpKind='slinear'):
         self.filename = filename
         self.snVars, self.data = self.get_data()
         self.bin_size = bin_size
+        self.interpKind = interpKind
 
     def get_data(self):
         """
@@ -45,24 +46,24 @@ class LightCurve(object):
 
         return fileVars, data
 
-    def plot_light_curves(self, axis, cm, zorder, label=None, plot_spline=False, offset=0):
+    def plot_light_curves(self, axis, cm, zorder, label=None, plot_spline=False, offset=0, linestyle='-'):
         """ Plots the light curve with error bars and a different color for each"""
         data = self.data
 
-        if label is None:
-            label = os.path.basename(self.filename).split('_')[0]
+        # if label is None:
+        #     label = os.path.basename(self.filename).split('_')[0]
 
         if not data['Phase(T_Bmax)'].empty and axis is not None:
             axis.errorbar(data['Phase(T_Bmax)'], data['Abs mag']+offset, yerr=data['Error Abs mag'], fmt=cm[1],
                           label=label, zorder=zorder, color=cm[0], alpha=0.8)
             if plot_spline:
                 xBins, yBins = self.bin_light_curve()
-                axis.plot(xBins, yBins+offset, color=cm[0], marker=None)
+                axis.plot(xBins, yBins+offset, color=cm[0], marker=None, linestyle=linestyle)
 
             # plt.figure()
             # plt.errorbar(data['Phase(T_Bmax)'], data['App mag'], yerr=data['Error App mag'], fmt='o')
 
-    def bin_light_curve(self, fig=None, ax=None, band=None, i=0, interpKind='slinear'):
+    def bin_light_curve(self, fig=None, ax=None, band=None, i=0):
         phase = self.data['Phase(T_Bmax)'].values
         absMag = self.data['Abs mag'].values
         xBins = np.arange(-10, 100, self.bin_size)
@@ -74,7 +75,7 @@ class LightCurve(object):
         phase, unique_args = np.unique(phase, return_index=True)
         absMag = absMag[unique_args]
 
-        y = interpolate.interp1d(x=phase, y=absMag, kind=interpKind, bounds_error=False, fill_value=np.NaN)
+        y = interpolate.interp1d(x=phase, y=absMag, kind=self.interpKind, bounds_error=False, fill_value=np.NaN)
         yBinned = y(xBins)
         # if fig is not None:
         #     snName = os.path.basename(self.filename).split('_')[0]
