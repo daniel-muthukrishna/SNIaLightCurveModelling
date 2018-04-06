@@ -34,30 +34,31 @@ def main():
     # axA.invert_yaxis()
     # linestyles = ['-', '--']
     figA, axA = {}, {}
-    for i in range(100):
-        figA[i], axA[i] = plt.subplots(1, figsize=(12, 10))
-        axA[i].invert_yaxis()
+    filenameList = get_filenames('J')[0]
+    for fname in filenameList:
+        snName = os.path.basename(str(fname)).split('_')[0]
+        figA[snName], axA[snName] = plt.subplots(1, figsize=(12, 10))
+        axA[snName].invert_yaxis()
     linestyles = ['-', '--']
     for i, band in enumerate(bandList):
         filenameList, scriptDir = get_filenames(band)
         popStats = PopulationStatistics(filenameList, band)
-        xBinsArray, yBinsArray, peaks, headerData = popStats.get_binned_light_curves(colorMarker=colorMarker, plot=True, bin_size=1, fig_spl=fig[0], ax_spl=ax[0], band_spl=band, i_spl=i, interp_kind='cubic')
+        xBinsArray, yBinsArray, peaks, headerData = popStats.get_binned_light_curves(colorMarker=colorMarker, plot=True, bin_size=0.1, fig_spl=fig[0], ax_spl=ax[0], band_spl=band, i_spl=i, interp_kind='cubic')
         muList = popStats.get_mu(headerData)
         nirPeaks = popStats.plot_mu_vs_peaks(muList, peaks)
 
         opticalNIR = CompareOpticalAndNIR('data/Table_salt_snoopy_fittedParams.txt', nirPeaks, band)
         opticalNIR.nir_peaks_vs_optical_params()
         opticalNIR.plot_parameters(fig=fig[1], ax=ax[1], i=i, band=band, figinfo=figinfo[1])
-        # opticalNIR.plot_parameters(fig=fig[2], ax=ax[2], i=i, band=band, figinfo=figinfo[2])
-        # opticalNIR.plot_parameters(fig=fig[3], ax=ax[3], i=i, band=band, figinfo=figinfo[3])
-        # opticalNIR.plot_parameters(fig=fig[4], ax=ax[4], i=i, band=band, figinfo=figinfo[4])
-        # opticalNIR.plot_parameters(fig=fig[5], ax=ax[5], i=i, band=band, figinfo=figinfo[5])
-        #
+        opticalNIR.plot_parameters(fig=fig[2], ax=ax[2], i=i, band=band, figinfo=figinfo[2])
+        opticalNIR.plot_parameters(fig=fig[3], ax=ax[3], i=i, band=band, figinfo=figinfo[3])
+        opticalNIR.plot_parameters(fig=fig[4], ax=ax[4], i=i, band=band, figinfo=figinfo[4])
+        opticalNIR.plot_parameters(fig=fig[5], ax=ax[5], i=i, band=band, figinfo=figinfo[5])
 
-        # plot_specific_light_curves(filenameList='common_optical_nir', colorMarker=colorMarker, bin_size=1, band=band,
-        #                            nirPeaks=nirPeaks, opticalDataFilename='data/Table_salt_snoopy_fittedParams.txt',
-        #                            title='Light curves with x1 values', savename='lightcurves_with_x1_vals_with_offset',
-        #                            offsetFlag=True, plotSpline=True)  # , fig_in=figA, ax_in=axA, linestyle=linestyles[i])
+        plot_specific_light_curves(filenameList='common_optical_nir', colorMarker=colorMarker, bin_size=1, band=band,
+                                   nirPeaks=nirPeaks, opticalDataFilename='data/Table_salt_snoopy_fittedParams.txt',
+                                   title='Light curves with x1 values', savename='lightcurves_with_x1_vals_with_offset',
+                                   offsetFlag=True, plotSpline=True) #, fig_in=figA, ax_in=axA, linestyle=linestyles[i])
 
         plot_specific_light_curves(filenameList='common_optical_nir', colorMarker=('k', 'o'), bin_size=1, band=band,
                                    nirPeaks=nirPeaks, opticalDataFilename='data/Table_salt_snoopy_fittedParams.txt',
@@ -89,4 +90,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-    plt.show()
+    # plt.show()

@@ -36,7 +36,7 @@ def plot_specific_light_curves(filenameList=(), colorMarker=None, bin_size=1, ba
         # snNameList = ['sn2006D', 'sn2007af', 'sn2007as', 'sn2007le', 'sn2008bc']
 
         for snName in snNameList:
-            for filepath in filePathListAll:
+            for filepath in filePathListAll[::-1]:
                 if snName in filepath:
                     filenameList.append(filepath)
                     x1List.append(float(opticalData['x1'][snName]))
@@ -68,14 +68,14 @@ def plot_specific_light_curves(filenameList=(), colorMarker=None, bin_size=1, ba
 
         if opticalFlag:
             if individualplots:
-                label = "x1={}, c={}".format(opticalData['x1'][snName], opticalData['c'][snName])
+                label = "{} x1={}, c={}".format(band, opticalData['x1'][snName], opticalData['c'][snName])
             else:
                 label = "{}: x1={}, c={}".format(snName, opticalData['x1'][snName], opticalData['c'][snName])
             print(label, filename)
         else:
             label = snName
-        if band == 'J':
-            label = None
+        # if band == 'J':
+        #     label = None
 
         if not individualplots:
             zorder -= 1
@@ -93,8 +93,10 @@ def plot_specific_light_curves(filenameList=(), colorMarker=None, bin_size=1, ba
                 title = "{}: {}".format(band, snName)
                 savename = "Figures/individual_plots/%s/%s.png" % (band, snName)
             else:
-                fig, ax = fig_in[i], ax_in[i]
+                fig, ax = fig_in[snName], ax_in[snName]
                 title = "{}".format(snName)
+                if not os.path.exists('Figures/individual_plots'):
+                    os.makedirs('Figures/individual_plots')
                 savename = "Figures/individual_plots/%s.png" % snName
             lightCurve.plot_light_curves(axis=ax, cm=('k', 'o'), zorder=0, label=label, plot_spline=True, offset=0, linestyle=linestyle)
             if opticalFlag:
@@ -111,10 +113,10 @@ def plot_specific_light_curves(filenameList=(), colorMarker=None, bin_size=1, ba
             fig.savefig(savename)
 
     if not individualplots:
-        ax.set_title("{}".format(title))
+        ax.set_title("{}: {}".format(band, title))
         ax.set_ylabel('Abs mag - offset')
         ax.set_xlabel('Phase (days)')
         if fig_in is None:
             ax.invert_yaxis()
         ax.legend()  # loc=2, bbox_to_anchor=(1.01, 1))
-        fig.savefig("Figures/%s.png" % (savename), bbox_inches='tight')
+        fig.savefig("Figures/%s_%s.png" % (band, savename), bbox_inches='tight')

@@ -99,7 +99,7 @@ class LightCurve(object):
             return None, None
 
         peakIndexes = argrelextrema(yBins, np.less)
-        peakPhases = xBins[peakIndexes]
+        peakPhases = np.round(xBins[peakIndexes], 1)
         peakMags = yBins[peakIndexes]
 
         troughIndexes = argrelextrema(yBins, np.greater)
